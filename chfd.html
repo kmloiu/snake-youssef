@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لعبة الدودة المطورة من قبل يوسف 🐍</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: Tahoma, sans-serif;
+      text-align: center;
+      padding-top: 30px;
+      direction: rtl;
+    }
+
+    canvas {
+      background-color: #222;
+      display: block;
+      margin: 15px auto;
+      border: 2px solid #0f0;
+    }
+
+    h1 {
+      color: #0f0;
+    }
+
+    .controls {
+      margin-bottom: 15px;
+    }
+
+    label, select, button {
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    .score {
+      font-size: 18px;
+      color: #0f0;
+      margin-top: 10px;
+    }
+
+    button {
+      background-color: #0f0;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #0c0;
+    }
+
+    .options {
+      margin-top: 15px;
+    }
+
+    .options label {
+      display: inline-block;
+      margin: 0 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>لعبة الدودة المطورة من قبل يوسف 🐍</h1>
+
+  <div class="controls">
+    <label>السرعة:</label>
+    <select id="speed">
+      <option value="150">بطيء 🐢</option>
+      <option value="100" selected>متوسط 🚶</option>
+      <option value="60">سريع 🏃</option>
+      <option value="30">جنوني 🚀</option>
+    </select>
+
+    <button onclick="restartGame()">إعادة التشغيل 🔁</button>
+    <button onclick="togglePause()">
+      ⏸️ إيقاف / تشغيل
+    </button>
+  </div>
+
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <div class="score">النتيجة: <span id="score">0</span></div>
+
+  <div class="options">
+    <label>لون الدودة:
+      <select id="snakeColor">
+        <option value="#0f0" selected>أخضر</option>
+        <option value="#00f">أزرق</option>
+        <option value="#f00">أحمر</option>
+        <option value="#ff0">أصفر</option>
+      </select>
+    </label>
+
+    <label>الخلفية:
+      <select id="bgColor">
+        <option value="#222" selected>داكن</option>
+        <option value="#000">أسود</option>
+        <option value="#fff">أبيض</option>
+        <option value="#333">رمادي</option>
+      </select>
+    </label>
+
+    <label>شكل الأكل:
+      <select id="foodShape">
+        <option value="🍎">🍎 تفاحة</option>
+        <option value="🍇">🍇 عنب</option>
+        <option value="🍓">🍓 فراولة</option>
+        <option value="⭐">⭐ نجمة</option>
+      </select>
+    </label>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const speedSelect = document.getElementById('speed');
+    const snakeColorSelect = document.getElementById('snakeColor');
+    const bgColorSelect = document.getElementById('bgColor');
+    const foodShapeSelect = document.getElementById('foodShape');
+
+    const gridSize = 20;
+    const tileCount = canvas.width / gridSize;
+
+    let snake = [{x: 10, y: 10}];
+    let dx = 0;
+    let dy = 0;
+    let food = randomFood();
+    let score = 0;
+    let intervalId = null;
+    let speed = parseInt(speedSelect.value);
+    let isPaused = false;
+
+    function gameLoop() {
+      if (isPaused) return;
+
+      const head = {...snake[0]};
+      head.x += dx;
+      head.y += dy;
+
+      head.x = (head.x + tileCount) % tileCount;
+      head.y = (head.y + tileCount) % tileCount;
+
+      for (let segment of snake) {
+        if (segment.x === head.x && segment.y === head.y) {
+          alert('انتهت اللعبة! 🛑 النتيجة: ' + score);
+          resetGame();
+          return;
+        }
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreDisplay.textContent = score;
+        food = randomFood();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+    }
+
+    function draw() {
+      // الخلفية
+      ctx.fillStyle = bgColorSelect.value;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // الدودة
+      ctx.fillStyle = snakeColorSelect.value;
+      for (let segment of snake) {
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+      }
+
+      // شكل الأكل
+      ctx.font = `${gridSize}px Arial`;
+      ctx.fillText(foodShapeSelect.value, food.x * gridSize, (food.y + 1) * gridSize - 4);
+    }
+
+    function randomFood() {
+      return {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount)
+      };
+    }
+
+    function resetGame() {
+      clearInterval(intervalId);
+      snake = [{x: 10, y: 10}];
+      dx = 0;
+      dy = 0;
+      food = randomFood();
+      score = 0;
+      scoreDisplay.textContent = score;
+      startGame();
+    }
+
+    function restartGame() {
+      isPaused = false;
+      resetGame();
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+    }
+
+    function startGame() {
+      speed = parseInt(speedSelect.value);
+      clearInterval(intervalId);
+      intervalId = setInterval(gameLoop, speed);
+    }
+
+    speedSelect.addEventListener('change', startGame);
+
+    document.addEventListener('keydown', e => {
+      switch (e.key) {
+        case 'ArrowUp':
+          if (dy === 0) { dx = 0; dy = -1; }
+          break;
+        case 'ArrowDown':
+          if (dy === 0) { dx = 0; dy = 1; }
+          break;
+        case 'ArrowLeft':
+          if (dx === 0) { dx = -1; dy = 0; }
+          break;
+        case 'ArrowRight':
+          if (dx === 0) { dx = 1; dy = 0; }
+          break;
+        case ' ':
+          togglePause();
+          break;
+      }
+    });
+
+    startGame(); // أول تشغيل
+  </script>
+</body>
+</html>
